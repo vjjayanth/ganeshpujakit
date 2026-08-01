@@ -1,84 +1,107 @@
-# 🪔 Divine Puja Kits - Store Pickup Web App
+# 🪔 Ganesh Puja Kits - Store Pickup Web Application
 
-A lightweight, mobile-first web application designed for selling single-type Puja Kits with direct store pickup. Includes automatic top 5 nearest store calculations, free address autocomplete, live Google Sheets synchronization, and a hidden admin dashboard with one-click Excel CSV export.
+An initiative by **Badyatha Foundation** promoting eco-friendly clay Ganesh idols and authentic organic Puja Kits across **Telangana**, **Andhra Pradesh**, **Karnataka**, and **Maharashtra**.
+
+A lightweight, high-performance, mobile-first web application designed for reserving complete Ganesh Puja Kits online in 30 seconds with direct store pickup at 88 verified pickup centers.
+
+---
+
+## 🛠️ Technology Stack & APIs
+
+* **Frontend Architecture**: HTML5, Vanilla CSS3 (Custom Design System, Glassmorphism, CSS Grid & Flexbox), Vanilla JavaScript (ES6+).
+* **Mapping & Geolocation APIs**:
+  * **Primary Address Autocomplete**: **[LocationIQ API](https://locationiq.com)** (`countrycodes=in` filtered for high-precision Indian address lookup).
+  * **Fallback Address Autocomplete**: **[OpenStreetMap (Photon API)](https://photon.komoot.io)**.
+  * **Reverse Geocoding**: LocationIQ + OSM Nominatim API for 1-click GPS location detection.
+  * **Distance Engine**: Custom **Haversine Distance Algorithm** implemented in `app.js` for real-time kilometer calculations.
+* **Backend & Database**:
+  * **Google Sheets Webhook API**: Live order logging via a serverless Google Apps Script (`google_script_template.js`) receiving `POST` payloads.
+  * **Default Google Sheet Webhook Endpoint**: `https://script.google.com/macros/s/AKfycbyZcR8RClyRo_jpeCEPqk6W9wiFHtroy1nHuAtPL_eW-QRYa-8v4T4HqIBUA3b69kI/exec`
+* **Media & Asset Optimization**:
+  * **Event Banner Poster (`poster.webp`)**: Compressed and edited into modern **WebP format via ChatGPT AI image editing**, achieving a **91% file size reduction** (from 2.1 MB down to 193 KB) for sub-second mobile page loads.
 
 ---
 
 ## 🌟 Key Features
 
-1. **Mobile-First UX**: Built for smartphone screens with large touch buttons, numerical keypads, and smooth animations.
-2. **Nearest Store Engine**:
-   - Calculates distance in kilometers between customer address and store coordinates using the Haversine algorithm.
-   - Automatically renders the **Top 5 Nearest Stores**.
-3. **Free Address Autocomplete & Geolocation**:
-   - **📍 Use My Location**: Standard browser Geolocation API with reverse geocoding.
-   - **OpenStreetMap Photon Autocomplete**: Free real-time address suggestions while typing (no API key required).
-4. **Instant Store Contact & Navigation**:
-   - **📞 Call Store**: Tapping opens phone dialer (`tel:` link).
-   - **📋 Copy Number**: Dedicated one-tap copy button with "Copied!" toast feedback.
-   - **🗺️ Get Directions**: Directly opens Google Maps navigation to the selected store.
-5. **Live Admin Sheet Sync & Excel Export**:
-   - **Google Sheets Webhook**: Integrates with a free Google Apps Script to log incoming requests directly to a single spreadsheet.
-   - **Hidden Admin Panel**: Access via the top-right 🔒 icon (Passcode: `admin123`).
-   - **📥 Download Excel (.CSV)**: Instant download of all orders for offline Excel management.
+1. **Mobile-First Responsive Design**:
+   * Optimized for smartphone viewports with touch-friendly action buttons, numeric keypads, and zero horizontal scrolling overflow.
+
+2. **Nearest Store Calculation Engine**:
+   * Calculates distance between customer address and 88 store coordinates in real-time using the Haversine formula.
+   * Renders the **Top 5 Nearest Stores** sorted by proximity.
+
+3. **Segmented Side-by-Side View Navigation**:
+   * Smooth tab switching between **`Book & Find Nearest Stores`** and **`Browse All Locations`**.
+
+4. **Multi-Row Region & Hyderabad Sub-Zone Filter Chips**:
+   * **State Filters**: Telangana / Hyd (75), Andhra Pradesh (9), Karnataka (1), Maharashtra (2).
+   * **Hyderabad Sub-Zone Filters** *(shown when Telangana is selected)*:
+     * 📍 **West Hyd** (*Kukatpally, Miyapur, Bachupally, Nizampet, KPHB*)
+     * 📍 **IT Corridor** (*Gachibowli, Kondapur, Madhapur, Manikonda, Kokapet*)
+     * 📍 **Central** (*Banjara Hills, Panjagutta, SR Nagar, Somajiguda, Tarnaka*)
+     * 📍 **East Hyd** (*LB Nagar, Uppal, Dilsukhnagar, Boduppal, Nacharam*)
+     * 📍 **North Hyd** (*Alwal, Kompally, Malkajgiri, ECIL, AS Rao Nagar*)
+     * 🌆 **Other Telangana Cities** (*Warangal, Nalgonda, Siddipet, Karimnagar, Choutuppal, Chityal, Suryapet, Kodad*)
+
+5. **Space-Saving Compact Store Cards & Action Buttons**:
+   * **`📞 Call Store`**: One-tap direct call (`tel:` protocol).
+   * **`🗺️ Directions`**: Opens Google Maps navigation directly to the store coordinates.
+
+6. **Batch Pagination**:
+   * Renders stores in clean batches of 12 per page with page numbers to prevent infinite scrolling.
+
+7. **Hidden Admin Dashboard & Excel Export**:
+   * Access via top-right 🔒 icon (*Passcode protected*).
+   * **📥 Download Excel (.CSV)**: Instant download of all orders for offline management.
+   * Configurable Google Sheets Webhook URL.
+
+---
+
+## 🔄 User Workflow
+
+```mermaid
+graph TD
+    A[Customer Opens Web App] --> B{Select View Mode}
+    B -->|Book & Find Nearest| C[Enter Name, Mobile, Qty & Address / GPS]
+    C --> D[Calculate Top 5 Nearest Stores via Haversine Algorithm]
+    D --> E[Log Order Data to Google Sheets Webhook]
+    E --> F[Display Closest Stores with 📞 Call Store & 🗺️ Directions]
+    
+    B -->|Browse All Locations| G[Select Region / Telangana Sub-Zone]
+    G --> H[Filter & Paginate 88 Compact Store Cards]
+    H --> I[One-Tap Call or Get Directions]
+```
 
 ---
 
 ## 🚀 How to Run Locally
 
-You can run this website using any standard local HTTP server or simple browser opening:
-
 ```bash
-# Option 1: Using npx http-server
-npx http-server ./
-
-# Option 2: Using Python built-in server
+# Option 1: Using Python built-in server
 python3 -m http.server 8080
-```
 
-Then open `http://localhost:8080` in your browser.
+# Option 2: Using npx http-server
+npx http-server ./
+```
+Open `http://localhost:8080` in your browser.
 
 ---
 
 ## ☁️ How to Deploy for Free on Vercel
 
-### Method 1: Using Vercel CLI (Recommended)
-
-1. Install Vercel CLI:
+1. Push your code to GitHub:
    ```bash
-   npm i -g vercel
+   git add .
+   git commit -m "Updated README with complete project architecture"
+   git push origin main
    ```
-2. Run deployment inside the project folder:
-   ```bash
-   vercel
-   ```
-3. Follow the prompts. Your site will be live instantly with a free HTTPS URL!
-
-### Method 2: Deploy via GitHub + Vercel Dashboard
-
-1. Push this project repository to your GitHub account.
-2. Go to [vercel.com](https://vercel.com) -> Click **Add New Project**.
-3. Import your GitHub repository and click **Deploy**.
+2. Go to **[vercel.com/new](https://vercel.com/new)**.
+3. Import repository **`vjjayanth/ganeshpujakit`** and click **Deploy**!
 
 ---
 
-## 📊 Setting Up Free Google Sheets Integration
+## 📜 Credits & Acknowledgments
 
-1. Create a new Google Sheet on [Google Sheets](https://sheets.google.com).
-2. Set Row 1 column headers:
-   `Order ID` | `Timestamp` | `Name` | `Mobile` | `Kits Count` | `Customer Address` | `Assigned Store`
-3. Click **Extensions > Apps Script** in Google Sheets menu.
-4. Copy the code from [`google_script_template.js`](file:///Users/jayanth/.gemini/antigravity/scratch/puja-kit-pickup-app/google_script_template.js) and paste it into the editor.
-5. Click **Deploy > New Deployment**:
-   - Select **Web app**.
-   - Execute as: **Me**.
-   - Who has access: **Anyone**.
-6. Copy the generated Web App URL.
-7. Click the 🔒 Lock icon on your website (Passcode: `admin123`) -> Paste the URL into the **Google Sheets Webhook URL** field and click **Save URL**.
-
-Every order placed by customers will now instantly appear in your Google Sheet!
-
-
-
-Location API token 
-https://my.locationiq.com/dashboard#accesstoken
+* **Initiated & Organized by**: **Badyatha Foundation**
+* **Repository**: [github.com/vjjayanth/ganeshpujakit](https://github.com/vjjayanth/ganeshpujakit)
