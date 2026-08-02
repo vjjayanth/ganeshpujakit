@@ -52,14 +52,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const newOrderBtn = document.getElementById('new-order-btn');
 
   // Navigation View Elements
+  const tabBookOrder = document.getElementById('tab-book-order');
   const tabFindNearest = document.getElementById('tab-find-nearest');
   const tabBrowseAll = document.getElementById('tab-browse-all');
-  const viewOrderContainer = document.getElementById('view-order-container');
+  const viewBookContainer = document.getElementById('view-book-container');
+  const viewNearestContainer = document.getElementById('view-nearest-container');
   const viewBrowseContainer = document.getElementById('view-browse-container');
+
+  const nearestGeoBtn = document.getElementById('nearest-geo-btn');
+  const nearestSearchAddress = document.getElementById('nearest-search-address');
+  const nearestAddressSuggestions = document.getElementById('nearest-address-suggestions');
+  const nearestSearchBtn = document.getElementById('nearest-search-btn');
+  const nearestLookupResults = document.getElementById('nearest-lookup-results');
+  const nearestStoresGrid = document.getElementById('nearest-stores-grid');
 
   const browseSearch = document.getElementById('browse-search');
   const regionChipsContainer = document.getElementById('region-chips');
   const allStoresGrid = document.getElementById('all-stores-grid');
+
+  // Modal Elements
+  const orderSuccessModal = document.getElementById('order-success-modal');
+  const modalOrderId = document.getElementById('modal-order-id');
+  const modalUserName = document.getElementById('modal-user-name');
+  const modalUserKits = document.getElementById('modal-user-kits');
+  const modalOkBtn = document.getElementById('modal-ok-btn');
+
+
+
+
 
   let activeRegion = 'ALL';
   let searchFilterQuery = '';
@@ -86,37 +106,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // Quantity Control Events
-  qtyMinus.addEventListener('click', () => {
-    let currentVal = parseInt(qtyInput.value) || 1;
-    if (currentVal > 1) qtyInput.value = currentVal - 1;
-  });
-  qtyPlus.addEventListener('click', () => {
-    let currentVal = parseInt(qtyInput.value) || 1;
-    if (currentVal < 20) qtyInput.value = currentVal + 1;
-  });
+  if (qtyMinus && qtyInput) {
+    qtyMinus.addEventListener('click', () => {
+      let currentVal = parseInt(qtyInput.value) || 1;
+      if (currentVal > 1) qtyInput.value = currentVal - 1;
+    });
+  }
+  if (qtyPlus && qtyInput) {
+    qtyPlus.addEventListener('click', () => {
+      let currentVal = parseInt(qtyInput.value) || 1;
+      if (currentVal < 20) qtyInput.value = currentVal + 1;
+    });
+  }
 
   // Mobile number input formatting (numbers only)
-  mobileInput.addEventListener('input', (e) => {
-    e.target.value = e.target.value.replace(/[^0-9]/g, '');
-  });
+  if (mobileInput) {
+    mobileInput.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+  }
+
 
   // ==========================================
   // 4. FREE ADDRESS AUTOCOMPLETE (Photon API)
   // ==========================================
   let debounceTimer;
-  addressInput.addEventListener('input', (e) => {
-    const query = e.target.value.trim();
-    clearTimeout(debounceTimer);
+  let activeAutocompleteTarget = 'BOOK'; // 'BOOK' or 'NEAREST'
 
-    if (query.length < 3) {
-      suggestionsBox.classList.add('hidden');
-      return;
-    }
+  if (addressInput) {
+    addressInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+      clearTimeout(debounceTimer);
+      activeAutocompleteTarget = 'BOOK';
 
-    debounceTimer = setTimeout(() => {
-      fetchAddressSuggestions(query);
-    }, 300);
-  });
+      if (query.length < 3) {
+        if (suggestionsBox) suggestionsBox.classList.add('hidden');
+        return;
+      }
+
+      debounceTimer = setTimeout(() => {
+        fetchAddressSuggestions(query);
+      }, 300);
+    });
+  }
+
+  if (nearestSearchAddress) {
+    nearestSearchAddress.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+      clearTimeout(debounceTimer);
+      activeAutocompleteTarget = 'NEAREST';
+
+      if (query.length < 3) {
+        if (nearestAddressSuggestions) nearestAddressSuggestions.classList.add('hidden');
+        return;
+      }
+
+      debounceTimer = setTimeout(() => {
+        fetchAddressSuggestions(query);
+      }, 300);
+    });
+  }
+
 
   async function fetchAddressSuggestions(query) {
     // 1. Primary: LocationIQ Autocomplete API (5,000 req/day free, India filtered)
@@ -152,7 +202,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderLocationIQSuggestions(items) {
-    suggestionsBox.innerHTML = '';
+    const targetBox = activeAutocompleteTarget === 'NEAREST' ? nearestAddressSuggestions : suggestionsBox;
+    const targetInput = activeAutocompleteTarget === 'NEAREST' ? nearestSearchAddress : addressInput;
+    if (!targetBox || !targetInput) return;
+
+    targetBox.innerHTML = '';
     items.forEach(item => {
       const displayName = item.display_name;
       const lat = parseFloat(item.lat);
@@ -164,18 +218,26 @@ document.addEventListener('DOMContentLoaded', () => {
       div.className = 'suggestion-item';
       div.textContent = displayName;
       div.addEventListener('click', () => {
-        addressInput.value = displayName;
+        targetInput.value = displayName;
         selectedCoordinates = { lat, lng };
-        suggestionsBox.classList.add('hidden');
+        targetBox.classList.add('hidden');
         showToast("📍 Location selected!");
+
+        if (activeAutocompleteTarget === 'NEAREST') {
+          renderNearestLookupStores(lat, lng);
+        }
       });
-      suggestionsBox.appendChild(div);
+      targetBox.appendChild(div);
     });
-    suggestionsBox.classList.remove('hidden');
+    targetBox.classList.remove('hidden');
   }
 
   function renderPhotonSuggestions(features) {
-    suggestionsBox.innerHTML = '';
+    const targetBox = activeAutocompleteTarget === 'NEAREST' ? nearestAddressSuggestions : suggestionsBox;
+    const targetInput = activeAutocompleteTarget === 'NEAREST' ? nearestSearchAddress : addressInput;
+    if (!targetBox || !targetInput) return;
+
+    targetBox.innerHTML = '';
     features.forEach(feature => {
       const props = feature.properties;
       const coords = feature.geometry.coordinates; // [lng, lat]
@@ -184,21 +246,26 @@ document.addEventListener('DOMContentLoaded', () => {
         .filter(Boolean)
         .join(', ');
 
-      if (!displayName) return;
+      if (!displayName || !coords || coords.length < 2) return;
 
-      const item = document.createElement('div');
-      item.className = 'suggestion-item';
-      item.textContent = displayName;
-      item.addEventListener('click', () => {
-        addressInput.value = displayName;
+      const div = document.createElement('div');
+      div.className = 'suggestion-item';
+      div.textContent = displayName;
+      div.addEventListener('click', () => {
+        targetInput.value = displayName;
         selectedCoordinates = { lat: coords[1], lng: coords[0] };
-        suggestionsBox.classList.add('hidden');
+        targetBox.classList.add('hidden');
         showToast("📍 Location selected!");
+
+        if (activeAutocompleteTarget === 'NEAREST') {
+          renderNearestLookupStores(coords[1], coords[0]);
+        }
       });
-      suggestionsBox.appendChild(item);
+      targetBox.appendChild(div);
     });
-    suggestionsBox.classList.remove('hidden');
+    targetBox.classList.remove('hidden');
   }
+
 
   // Hide suggestions when clicking outside
   document.addEventListener('click', (e) => {
@@ -210,88 +277,129 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================
   // 5. BROWSER GEOLOCATION HANDLER
   // ==========================================
-  geoBtn.addEventListener('click', () => {
-    if (!navigator.geolocation) {
-      geoStatus.textContent = "Geolocation is not supported by your browser.";
-      return;
-    }
+  if (geoBtn) {
+    geoBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        if (geoStatus) geoStatus.textContent = "Geolocation is not supported by your browser.";
+        return;
+      }
 
-    geoStatus.textContent = "Detecting location...";
-    geoBtn.disabled = true;
+      if (geoStatus) geoStatus.textContent = "Detecting location...";
+      geoBtn.disabled = true;
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        selectedCoordinates = { lat: latitude, lng: longitude };
-        geoStatus.textContent = "✓ Location detected!";
-        geoBtn.disabled = false;
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          selectedCoordinates = { lat: latitude, lng: longitude };
+          if (geoStatus) geoStatus.textContent = "✓ Location detected!";
+          geoBtn.disabled = false;
 
-        // Reverse Geocode: LocationIQ (Primary) -> Nominatim (Fallback)
-        try {
-          let address = null;
-          if (LOCATIONIQ_TOKEN) {
-            try {
-              const res = await fetch(`https://us1.locationiq.com/v1/reverse?key=${LOCATIONIQ_TOKEN}&lat=${latitude}&lon=${longitude}&format=json`);
-              if (res.ok) {
-                const data = await res.json();
-                if (data && data.display_name) address = data.display_name;
+          // Reverse Geocode: LocationIQ (Primary) -> Nominatim (Fallback)
+          try {
+            let address = null;
+            if (LOCATIONIQ_TOKEN) {
+              try {
+                const res = await fetch(`https://us1.locationiq.com/v1/reverse?key=${LOCATIONIQ_TOKEN}&lat=${latitude}&lon=${longitude}&format=json`);
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data && data.display_name) address = data.display_name;
+                }
+              } catch (e) {
+                console.warn("LocationIQ reverse geocode failed, using Nominatim fallback:", e);
               }
-            } catch (e) {
-              console.warn("LocationIQ reverse geocode failed, using Nominatim fallback:", e);
             }
+
+            if (!address) {
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+              const data = await res.json();
+              if (data && data.display_name) address = data.display_name;
+            }
+
+            if (addressInput) addressInput.value = address || `Near ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          } catch (e) {
+            if (addressInput) addressInput.value = `Detected Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
           }
+          showToast("📍 Current location applied!");
+        },
 
-          if (!address) {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-            const data = await res.json();
-            if (data && data.display_name) address = data.display_name;
+        (error) => {
+          geoBtn.disabled = false;
+          if (error.code === error.PERMISSION_DENIED) {
+            if (geoStatus) geoStatus.textContent = "Permission denied. Please enter address manually.";
+          } else {
+            if (geoStatus) geoStatus.textContent = "Unable to retrieve location. Enter address manually.";
           }
+        },
+        { timeout: 10000, enableHighAccuracy: true }
+      );
+    });
+  }
 
-          addressInput.value = address || `Near ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-        } catch (e) {
-          addressInput.value = `Detected Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
-        }
-        showToast("📍 Current location applied!");
-      },
-
-      (error) => {
-        geoBtn.disabled = false;
-        if (error.code === error.PERMISSION_DENIED) {
-          geoStatus.textContent = "Permission denied. Please enter address manually.";
-        } else {
-          geoStatus.textContent = "Unable to retrieve location. Enter address manually.";
-        }
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
-  });
 
   // ==========================================
-  // 6. DISTANCE ENGINE (Haversine Formula)
+  // 6. DISTANCE ENGINE & MAPS HELPERS
   // ==========================================
   function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+    const p1Lat = parseFloat(lat1);
+    const p1Lon = parseFloat(lon1);
+    const p2Lat = parseFloat(lat2);
+    const p2Lon = parseFloat(lon2);
+
+    if (isNaN(p1Lat) || isNaN(p1Lon) || isNaN(p2Lat) || isNaN(p2Lon)) {
+      return 999999; // Return high fallback distance for un-geocoded stores
+    }
+
     const R = 6371; // Earth's radius in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const dLat = (p2Lat - p1Lat) * Math.PI / 180;
+    const dLon = (p2Lon - p1Lon) * Math.PI / 180;
     const a = 
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.cos(p1Lat * Math.PI / 180) * Math.cos(p2Lat * Math.PI / 180) * 
       Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return (R * c).toFixed(1);
+    return R * c; // Return raw number for accurate mathematical sorting
   }
 
   function getTop5NearestStores(userLat, userLng) {
+    const validUserLat = parseFloat(userLat);
+    const validUserLng = parseFloat(userLng);
+
+    if (isNaN(validUserLat) || isNaN(validUserLng)) {
+      return STORES_DATABASE.slice(0, 5).map(s => ({ ...s, distanceKm: undefined }));
+    }
+
     const storesWithDistance = STORES_DATABASE.map(store => {
-      const dist = parseFloat(calculateDistanceKm(userLat, userLng, store.lat, store.lng));
-      return { ...store, distanceKm: dist };
+      const rawDist = calculateDistanceKm(validUserLat, validUserLng, store.lat, store.lng);
+      return { 
+        ...store, 
+        distanceKm: rawDist >= 900000 ? undefined : parseFloat(rawDist.toFixed(1)) 
+      };
     });
 
-    // Sort by nearest distance
-    storesWithDistance.sort((a, b) => a.distanceKm - b.distanceKm);
+    // Sort numerically by distance (closest first)
+    storesWithDistance.sort((a, b) => {
+      const dA = a.distanceKm !== undefined ? a.distanceKm : 999999;
+      const dB = b.distanceKm !== undefined ? b.distanceKm : 999999;
+      return dA - dB;
+    });
 
     return storesWithDistance.slice(0, 5);
   }
+
+  function getStoreGmapsUrl(store) {
+    if (store.gmapsUrl) return store.gmapsUrl;
+    if (store.lat && store.lng) {
+      return `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
+    }
+    // Search query fallback for stores without exact lat/lng
+    const query = `${store.name}, ${store.location || ''}, Telangana, India`;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  }
+
+  function isApproxStore(store) {
+    return !store.lat || !store.lng || store.hasDirections === false;
+  }
+
 
   // ==========================================
   // 7. FORM SUBMISSION & STORE LOCATOR
@@ -332,24 +440,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show Loading State
     const btnText = submitBtn.querySelector('.btn-text');
     const btnSpinner = submitBtn.querySelector('.btn-spinner');
-    btnText.textContent = "Locating Nearest Stores...";
-    btnSpinner.classList.remove('hidden');
+    if (btnText) btnText.textContent = "Reserving Kits...";
+    if (btnSpinner) btnSpinner.classList.remove('hidden');
     submitBtn.disabled = true;
 
-    // Compute Nearest Stores
-    const topStores = getTop5NearestStores(selectedCoordinates.lat, selectedCoordinates.lng);
+    // Generate Unique Order ID (Format: PK-MMDD-XXXX)
+    const today = new Date();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const randomCode = Math.floor(1000 + Math.random() * 9000);
+    const orderId = `PK-${month}${day}-${randomCode}`;
 
     // Save Order Data
     const orderData = {
-      id: "ORD-" + Date.now().toString().slice(-6),
+      id: orderId,
       timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
       name,
       mobile,
       kits: quantity,
       address,
-      userLat: selectedCoordinates.lat,
-      userLng: selectedCoordinates.lng,
-      nearestStore: topStores[0].name
+      nearestStore: "N/A (Store Lookup)"
     };
 
     // Save locally
@@ -358,29 +468,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // Send to Google Sheet Webhook (Async, non-blocking)
     sendToGoogleSheetWebhook(orderData);
 
-    // Render Store Results after short delay
+    // Show Popup Modal after short delay
     setTimeout(() => {
-      renderTopStores(topStores);
-      summaryKits.textContent = quantity;
-
-      formSection.classList.add('hidden');
-      resultsSection.classList.remove('hidden');
-      window.scrollTo({ top: resultsSection.offsetTop - 80, behavior: 'smooth' });
-
       // Reset Button State
-      btnText.textContent = "Find Nearest Pickup Stores";
-      btnSpinner.classList.add('hidden');
+      if (btnText) btnText.textContent = "🪔 Confirm & Reserve Puja Kits";
+      if (btnSpinner) btnSpinner.classList.add('hidden');
       submitBtn.disabled = false;
-    }, 600);
+
+      // Populate Modal & Display
+      if (modalOrderId) modalOrderId.textContent = orderId;
+      if (modalUserName) modalUserName.textContent = name;
+      if (modalUserKits) modalUserKits.textContent = quantity;
+      if (orderSuccessModal) orderSuccessModal.classList.remove('hidden');
+    }, 500);
+
   });
 
-  newOrderBtn.addEventListener('click', () => {
-    form.reset();
-    qtyInput.value = 1;
-    resultsSection.classList.add('hidden');
-    formSection.classList.remove('hidden');
-    window.scrollTo({ top: formSection.offsetTop - 80, behavior: 'smooth' });
-  });
+  // Modal OK Button
+  if (modalOkBtn) {
+    modalOkBtn.addEventListener('click', () => {
+      if (orderSuccessModal) orderSuccessModal.classList.add('hidden');
+      if (form) form.reset();
+      if (qtyInput) qtyInput.value = 1;
+    });
+  }
+
+
 
   // ==========================================
   // 8. RENDER STORE CARDS & ACTIONS
@@ -392,14 +505,15 @@ document.addEventListener('DOMContentLoaded', () => {
     stores.forEach((store, index) => {
       const row = document.createElement('div');
       row.className = `compact-store-card ${index === 0 ? 'top-nearest' : ''}`;
-
-      const googleMapsUrl = store.gmapsUrl || (store.lat && store.lng ? `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}` : null);
+      const googleMapsUrl = getStoreGmapsUrl(store);
+      const isApprox = isApproxStore(store);
 
       row.innerHTML = `
         <div class="compact-info">
           <div class="store-top-bar" style="margin-bottom:4px;">
             <span class="rank-badge">${index === 0 ? '🏆 Closest Option' : `#${index + 1} Nearest`}</span>
             ${store.distanceKm !== undefined ? `<span class="distance-badge">📍 ${store.distanceKm} km away</span>` : ''}
+            ${isApprox ? `<span class="approx-badge" style="background:#FFF3E0; color:#E65100; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:12px; margin-left:4px; display:inline-block;">📍 Approx Location</span>` : ''}
           </div>
           <div class="compact-name">${store.name}</div>
         </div>
@@ -413,31 +527,198 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
 
-
       storesListContainer.appendChild(row);
     });
   }
 
 
+
   // ==========================================
   // VIEW SWITCHING & STATE-WISE FILTERING
   // ==========================================
-  if (tabFindNearest && tabBrowseAll) {
-    tabFindNearest.addEventListener('click', () => {
-      tabFindNearest.classList.add('active');
-      tabBrowseAll.classList.remove('active');
-      viewBrowseContainer.classList.add('hidden');
-      viewOrderContainer.classList.remove('hidden');
+  function setNavTabActive(activeTab) {
+    [tabBookOrder, tabFindNearest, tabBrowseAll].forEach(t => {
+      if (t) t.classList.remove('active');
     });
+    if (activeTab) activeTab.classList.add('active');
+  }
 
+  function showViewContainer(targetContainer) {
+    [viewBookContainer, viewNearestContainer, viewBrowseContainer].forEach(c => {
+      if (c) c.classList.add('hidden');
+    });
+    if (targetContainer) {
+      targetContainer.classList.remove('hidden');
+      // Force animation restart for ultra-smooth scale-fade transition
+      targetContainer.style.animation = 'none';
+      targetContainer.offsetHeight; // trigger reflow
+      targetContainer.style.animation = '';
+
+      // Smooth scroll browser viewport directly to the active content section
+      setTimeout(() => {
+        const headerOffset = 75;
+        const elementPosition = targetContainer.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({
+          top: Math.max(0, offsetPosition),
+          behavior: 'smooth'
+        });
+      }, 30);
+    }
+  }
+
+
+  if (tabBookOrder) {
+    tabBookOrder.addEventListener('click', () => {
+      setNavTabActive(tabBookOrder);
+      showViewContainer(viewBookContainer);
+    });
+  }
+
+  if (tabFindNearest) {
+    tabFindNearest.addEventListener('click', () => {
+      setNavTabActive(tabFindNearest);
+      showViewContainer(viewNearestContainer);
+    });
+  }
+
+  if (tabBrowseAll) {
     tabBrowseAll.addEventListener('click', () => {
-      tabBrowseAll.classList.add('active');
-      tabFindNearest.classList.remove('active');
-      viewOrderContainer.classList.add('hidden');
-      viewBrowseContainer.classList.remove('hidden');
+      setNavTabActive(tabBrowseAll);
+      showViewContainer(viewBrowseContainer);
       renderFilteredStores();
     });
   }
+
+
+  // Standalone Find Nearest Stores Tool Handlers
+  if (nearestGeoBtn) {
+    nearestGeoBtn.addEventListener('click', () => {
+      if (!window.isSecureContext && location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        showToast("⚠️ Mobile GPS requires HTTPS. Type your area below or deploy to Vercel.");
+      }
+
+      if (navigator.geolocation) {
+        showToast("📍 Detecting your current location...");
+        nearestGeoBtn.disabled = true;
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            nearestGeoBtn.disabled = false;
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            renderNearestLookupStores(userLat, userLng);
+            showToast("✓ Nearest stores calculated!");
+          },
+          (err) => {
+            nearestGeoBtn.disabled = false;
+            if (err.code === err.PERMISSION_DENIED) {
+              showToast("Location permission denied. Please type your area name below.");
+            } else if (err.code === err.TIMEOUT) {
+              showToast("GPS signal timed out. Please type your area name below.");
+            } else {
+              showToast("Could not access GPS. Please type your area name below.");
+            }
+          },
+          {
+            enableHighAccuracy: false, // Cell/Wi-Fi triangulation is faster & reliable indoors on mobile
+            timeout: 12000,
+            maximumAge: 60000
+          }
+        );
+      } else {
+        showToast("Geolocation not supported. Please type your location below.");
+      }
+    });
+  }
+
+  if (nearestSearchBtn && nearestSearchAddress) {
+    nearestSearchBtn.addEventListener('click', async () => {
+      const q = nearestSearchAddress.value.trim();
+      if (!q) {
+        showToast("Please enter an address or area name");
+        return;
+      }
+
+      showToast("Searching location...");
+
+      // 1. Try LocationIQ Geocoding
+      try {
+        if (LOCATIONIQ_TOKEN) {
+          const res = await fetch(`https://api.locationiq.com/v1/autocomplete?key=${LOCATIONIQ_TOKEN}&q=${encodeURIComponent(q)}&limit=1&countrycodes=in&format=json`);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              const lat = parseFloat(data[0].lat);
+              const lng = parseFloat(data[0].lon);
+              if (!isNaN(lat) && !isNaN(lng)) {
+                renderNearestLookupStores(lat, lng);
+                showToast("✓ Found nearest stores!");
+                return;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("LocationIQ search fallback:", e);
+      }
+
+      // 2. Try OpenStreetMap Photon Geocoding
+      try {
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=1&lang=en`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.features && data.features.length > 0) {
+            const coords = data.features[0].geometry.coordinates; // [lng, lat]
+            if (coords && coords.length >= 2) {
+              renderNearestLookupStores(coords[1], coords[0]);
+              showToast("✓ Found nearest stores!");
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Photon search fallback:", e);
+      }
+
+      // 3. Fallback to default
+      renderNearestLookupStores(selectedCoordinates.lat, selectedCoordinates.lng);
+    });
+  }
+
+
+  function renderNearestLookupStores(userLat, userLng) {
+    if (!nearestStoresGrid) return;
+    nearestStoresGrid.innerHTML = '';
+    const topStores = getTop5NearestStores(userLat, userLng);
+
+    topStores.forEach((store, index) => {
+      const googleMapsUrl = getStoreGmapsUrl(store);
+      const isApprox = isApproxStore(store);
+      const row = document.createElement('div');
+      row.className = `compact-store-card ${index === 0 ? 'top-nearest' : ''}`;
+      row.innerHTML = `
+        <div class="compact-info">
+          <div class="store-top-bar" style="margin-bottom:4px;">
+            <span class="rank-badge">${index === 0 ? '🏆 Closest Option' : `#${index + 1} Nearest`}</span>
+            ${store.distanceKm !== undefined ? `<span class="distance-badge">📍 ${store.distanceKm} km away</span>` : ''}
+            ${isApprox ? `<span class="approx-badge" style="background:#FFF3E0; color:#E65100; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:12px; margin-left:4px; display:inline-block;">📍 Approx Location</span>` : ''}
+          </div>
+          <div class="compact-name">${store.name}</div>
+        </div>
+        <div class="compact-actions">
+          ${store.managerPhone ? `<a href="tel:${store.managerPhone.replace(/\s+/g, '')}" class="btn btn-secondary btn-sm">📞 Call Store</a>` : ''}
+          ${googleMapsUrl ? `<a href="${googleMapsUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">🗺️ Directions</a>` : ''}
+        </div>
+      `;
+      nearestStoresGrid.appendChild(row);
+    });
+
+    if (nearestLookupResults) nearestLookupResults.classList.remove('hidden');
+  }
+
+
+
 
 
   // Sub-zone & Pagination Variables
@@ -486,6 +767,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (zoneChipsContainer) {
           if (activeRegion === 'TELANGANA') {
             zoneChipsContainer.classList.remove('hidden');
+            // Smooth jump directly to Telangana sub-zone chips
+            setTimeout(() => {
+              const headerOffset = 75;
+              const elementPosition = zoneChipsContainer.getBoundingClientRect().top;
+              const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+              window.scrollTo({ top: Math.max(0, offsetPosition), behavior: 'smooth' });
+            }, 30);
           } else {
             zoneChipsContainer.classList.add('hidden');
             activeZone = 'ALL'; // Reset zone filter when switching away from Telangana
@@ -500,6 +788,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
+
 
 
   if (browseSearch) {
@@ -537,6 +827,8 @@ document.addEventListener('DOMContentLoaded', () => {
     return keywords.some(kw => locLower.includes(kw) || addrLower.includes(kw));
   }
 
+  let showAllStoresMode = false;
+
   function renderFilteredStores() {
     if (!allStoresGrid) return;
     allStoresGrid.innerHTML = '';
@@ -566,6 +858,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Pagination calculations
     const totalStores = filtered.length;
     const totalPages = Math.ceil(totalStores / STORES_PER_PAGE);
+
     if (currentPage > totalPages) currentPage = totalPages;
     if (currentPage < 1) currentPage = 1;
 
@@ -582,13 +875,14 @@ document.addEventListener('DOMContentLoaded', () => {
     allStoresGrid.className = 'stores-grid compact-grid';
 
     pagedStores.forEach(store => {
-      const googleMapsUrl = store.gmapsUrl || (store.lat && store.lng ? `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}` : null);
+      const googleMapsUrl = getStoreGmapsUrl(store);
+      const isApprox = isApproxStore(store);
 
       const row = document.createElement('div');
       row.className = 'compact-store-card';
       row.innerHTML = `
         <div class="compact-info">
-          <div class="compact-name">${store.name}</div>
+          <div class="compact-name">${store.name} ${isApprox ? `<span class="approx-badge" style="background:#FFF3E0; color:#E65100; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:12px; margin-left:4px; display:inline-block;">📍 Approx Location</span>` : ''}</div>
         </div>
         <div class="compact-actions">
           ${store.managerPhone ? `
@@ -600,7 +894,6 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
       allStoresGrid.appendChild(row);
-
     });
 
     // Render Pagination Buttons
@@ -629,7 +922,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     paginationButtons.appendChild(prevBtn);
 
-    // Page Number Buttons
+
+    // Page Number Buttons (All pages 1..totalPages)
     for (let i = 1; i <= totalPages; i++) {
       const pageBtn = document.createElement('button');
       pageBtn.type = 'button';
@@ -660,9 +954,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  function renderAllStoresPreview() {
-    renderFilteredStores();
-  }
 
 
   // ==========================================
@@ -692,33 +983,86 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function loadSavedWebhookUrl() {
-    const savedUrl = localStorage.getItem('google_sheet_webhook_url') || DEFAULT_WEBHOOK_URL;
+    let savedUrl = localStorage.getItem('google_sheet_webhook_url');
+    if (!savedUrl) {
+      savedUrl = DEFAULT_WEBHOOK_URL;
+      localStorage.setItem('google_sheet_webhook_url', savedUrl);
+    }
     if (googleSheetUrlInput) {
       googleSheetUrlInput.value = savedUrl;
     }
   }
 
-  saveWebhookBtn.addEventListener('click', () => {
-    const url = googleSheetUrlInput.value.trim();
-    localStorage.setItem('google_sheet_webhook_url', url);
-    showToast("✓ Webhook URL Saved!");
-  });
+
+  if (saveWebhookBtn) {
+    saveWebhookBtn.addEventListener('click', () => {
+      if (googleSheetUrlInput) {
+        const url = googleSheetUrlInput.value.trim();
+        localStorage.setItem('google_sheet_webhook_url', url);
+        showToast("✓ Webhook URL Saved!");
+      }
+    });
+  }
 
   // ==========================================
   // 10. HIDDEN ADMIN DASHBOARD & EXCEL EXPORT
   // ==========================================
-  adminTriggerBtn.addEventListener('click', () => {
-    adminModal.classList.remove('hidden');
+  const togglePasscodeBtn = document.getElementById('toggle-passcode-btn');
+
+  if (togglePasscodeBtn && adminPasscodeInput) {
+    togglePasscodeBtn.addEventListener('click', () => {
+      const isPassword = adminPasscodeInput.type === 'password';
+      adminPasscodeInput.type = isPassword ? 'text' : 'password';
+      togglePasscodeBtn.innerHTML = isPassword 
+        ? '<span class="material-symbols-outlined" style="font-size: 20px;">visibility_off</span>' 
+        : '<span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>';
+    });
+  }
+
+  if (adminTriggerBtn) {
+    adminTriggerBtn.addEventListener('click', () => {
+      if (adminModal) adminModal.classList.remove('hidden');
+      if (adminPasscodeInput) adminPasscodeInput.focus();
+    });
+  }
+
+
+  if (adminCloseBtn) {
+    adminCloseBtn.addEventListener('click', () => {
+      adminModal.classList.add('hidden');
+    });
+  }
+
+
+
+  // Close modal when clicking outside content backdrop
+  if (adminModal) {
+    adminModal.addEventListener('click', (e) => {
+      if (e.target === adminModal) {
+        adminModal.classList.add('hidden');
+      }
+    });
+  }
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (adminModal && !adminModal.classList.contains('hidden')) {
+        adminModal.classList.add('hidden');
+      }
+      if (orderSuccessModal && !orderSuccessModal.classList.contains('hidden')) {
+        orderSuccessModal.classList.add('hidden');
+      }
+    }
   });
 
-  adminCloseBtn.addEventListener('click', () => {
-    adminModal.classList.add('hidden');
-  });
+  if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleAdminAuth);
+  if (adminPasscodeInput) {
+    adminPasscodeInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAdminAuth();
+    });
+  }
 
-  adminLoginBtn.addEventListener('click', handleAdminAuth);
-  adminPasscodeInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleAdminAuth();
-  });
 
   function handleAdminAuth() {
     const code = adminPasscodeInput.value.trim();
@@ -731,14 +1075,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+
   function renderAdminTable() {
     const orders = JSON.parse(localStorage.getItem('puja_orders') || '[]');
-    totalOrdersCount.textContent = orders.length;
+    if (totalOrdersCount) totalOrdersCount.textContent = orders.length;
+
+    const totalKits = orders.reduce((sum, order) => sum + (parseInt(order.kits) || 1), 0);
+    const totalKitsEl = document.getElementById('total-kits-count');
+    if (totalKitsEl) totalKitsEl.textContent = totalKits;
 
     if (orders.length === 0) {
-      ordersTableBody.innerHTML = `<tr><td colspan="7" class="empty-table">No orders logged yet.</td></tr>`;
+      ordersTableBody.innerHTML = `<tr><td colspan="6" class="empty-table">No orders logged yet.</td></tr>`;
       return;
     }
+
 
     ordersTableBody.innerHTML = '';
     orders.forEach(order => {
@@ -749,7 +1099,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <td><a href="tel:${order.mobile}">${order.mobile}</a></td>
         <td><strong>${order.kits}</strong></td>
         <td><small>${escapeHtml(order.address)}</small></td>
-        <td>${escapeHtml(order.nearestStore)}</td>
         <td><span class="rank-badge">Reserved</span></td>
       `;
       ordersTableBody.appendChild(tr);
@@ -765,16 +1114,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Order ID,Timestamp,Customer Name,Mobile Number,Kits Count,Address,Assigned Store\n";
+    csvContent += "Order ID,Timestamp,Customer Name,Mobile Number,Kits Count,Address\n";
 
     orders.forEach(row => {
       const cleanName = `"${(row.name || '').replace(/"/g, '""')}"`;
       const cleanAddress = `"${(row.address || '').replace(/"/g, '""')}"`;
-      const cleanStore = `"${(row.nearestStore || '').replace(/"/g, '""')}"`;
       
-      const line = `${row.id},${row.timestamp},${cleanName},${row.mobile},${row.kits},${cleanAddress},${cleanStore}`;
+      const line = `${row.id || 'PK-PENDING'},${row.timestamp},${cleanName},${row.mobile},${row.kits},${cleanAddress}`;
       csvContent += line + "\n";
     });
+
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -787,13 +1136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast("📥 Excel CSV File Downloaded!");
   });
 
-  clearOrdersBtn.addEventListener('click', () => {
-    if (confirm("Are you sure you want to clear all local order records?")) {
-      localStorage.removeItem('puja_orders');
-      renderAdminTable();
-      showToast("Orders cleared.");
-    }
-  });
+
 
   // ==========================================
   // 11. TOAST NOTIFICATION SYSTEM

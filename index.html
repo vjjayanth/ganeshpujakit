@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Divine Puja Kits - Nearest Store Pickup</title>
+  <title>Ganesh Puja Kits - Nearest Store Pickup</title>
   <meta name="description"
     content="Order authentic Ganesh Puja Kits and collect them directly from your nearest store location. Fast, simple, pay at store.">
 
@@ -13,10 +13,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
-    rel="family">
+    rel="stylesheet">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="styles.css">
+
 </head>
 
 <body>
@@ -49,36 +52,32 @@
       </div>
     </section>
 
-    <!-- Side-by-Side View Navigation Tabs -->
+    <!-- Vertical Stacked Navigation Buttons -->
     <div class="nav-tabs-container">
-      <div class="nav-tabs">
-        <button type="button" id="tab-find-nearest" class="tab-btn active">
-          <span class="tab-icon">🎯</span> Book & Find Nearest Stores
+      <div class="nav-tabs vertical-tabs">
+        <button type="button" id="tab-book-order" class="tab-btn active">
+          Book Your Order
+        </button>
+        <button type="button" id="tab-find-nearest" class="tab-btn">
+          Find Nearest Stores
         </button>
         <button type="button" id="tab-browse-all" class="tab-btn">
-          <span class="tab-icon">🏪</span> Browse All Locations
+          Browse All Locations
         </button>
       </div>
     </div>
 
-    <!-- Hero / Info Card -->
-    <section class="hero-card">
-      <div class="hero-badge">
-        <span class="pulse-dot"></span> Store Pickup Only
-      </div>
-      <h1 class="hero-title">Order Your Puja Kit</h1>
-      <p class="hero-desc">Reserve your complete Puja Kit online in 30 seconds and collect it from the nearest store
-        near you. <strong>Pay Cash or UPI directly at the store.</strong></p>
-    </section>
 
 
-    <!-- VIEW 1: Order Form & Nearest Store Finder -->
-    <div id="view-order-container" class="view-section">
+
+
+    <!-- VIEW 1: Book Your Order -->
+    <div id="view-book-container" class="view-section">
       <!-- Main Order Form Section -->
       <section id="order-form-section" class="card form-card">
         <div class="card-header">
           <h2>Enter Order Details</h2>
-          <p>Fill in your contact details and location to locate nearest stores.</p>
+          <p>Fill in your contact details and address to log your order.</p>
         </div>
 
         <form id="puja-order-form" novalidate>
@@ -97,8 +96,8 @@
             <label for="customer-mobile">Mobile Number <span class="required">*</span></label>
             <div class="input-wrapper mobile-wrapper">
               <span class="country-code">+91</span>
-              <input type="tel" id="customer-mobile" placeholder="98765 43210" maxlength="10" pattern="[0-9]{10}" required
-                autocomplete="tel">
+              <input type="tel" id="customer-mobile" placeholder="98765 43210" maxlength="10" pattern="[0-9]{10}"
+                required autocomplete="tel">
             </div>
             <span class="error-msg" id="mobile-error">Please enter a valid 10-digit mobile number</span>
           </div>
@@ -113,78 +112,89 @@
             </div>
           </div>
 
-          <!-- Location & Address Input -->
-          <div class="form-group location-group">
-            <label for="customer-address">Pickup Search Location / Address <span class="required">*</span></label>
+          <!-- Address Input (Manual Text Only) -->
+          <div class="form-group">
+            <label for="customer-address">Your Address <span class="required">*</span></label>
+            <div class="input-wrapper">
 
-            <!-- Transparency Banner -->
-            <div class="info-box">
-              <span class="info-icon">ℹ️</span>
-              <span>Your address is used <strong>only</strong> to calculate the nearest available stores for your order
-                pickup.</span>
+              <input type="text" id="customer-address" placeholder="Enter your area or complete address..." required
+                autocomplete="street-address">
             </div>
-
-            <!-- GPS Button & Input -->
-            <div class="location-actions">
-              <button type="button" id="geo-btn" class="btn btn-secondary">
-                <span class="btn-main-label"><span class="btn-icon">📍</span> Use My Current Location</span>
-                <span class="btn-sub-label">⭐ Recommended</span>
-              </button>
-            </div>
-            <p class="text-center font-weight-bold">(OR enter your address manually below)</p>
-            <div class="input-wrapper autocomplete-wrapper">
-              <span class="input-icon">🏠</span>
-              <input type="text" id="customer-address" placeholder="Type area, street name, pincode..." required
-                autocomplete="off">
-              <div id="address-suggestions" class="suggestions-list hidden"></div>
-            </div>
-            <span class="error-msg" id="address-error">Please enter or select a valid address/location</span>
+            <span class="error-msg" id="address-error">Please enter your address</span>
           </div>
 
           <!-- Submit Button -->
           <button type="submit" id="submit-btn" class="btn btn-primary btn-block btn-lg">
-            <span class="btn-text">Find Nearest Pickup Stores</span>
+            <span class="btn-text">Confirm & Reserve Puja Kits</span>
             <span class="btn-spinner hidden"></span>
           </button>
         </form>
       </section>
+    </div>
 
-      <!-- Store Results Section (Hidden by default) -->
-      <section id="results-section" class="results-container hidden">
-        <div class="results-header">
-          <div class="success-banner">
-            <span class="success-icon">🎉</span>
-            <div>
-              <h3>Order Reserved Successfully!</h3>
-              <p id="order-summary-text">Your request for <span id="summary-kits">1</span> Puja Kit(s) has been logged.
-              </p>
-            </div>
-          </div>
+    <!-- Order Confirmation Modal Popup -->
+    <div id="order-success-modal" class="modal-overlay hidden">
+      <div class="modal-card text-center" style="max-width: 420px; padding: 28px 24px;">
+         <h2
+          style="font-family: var(--font-heading); color: var(--text-main); font-weight: 800; font-size: 1.5rem; margin-bottom: 10px;">
+          Order Reserved!</h2>
+        <p id="modal-success-message"
+          style="font-size: 1.02rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5;">
+          Hi <strong id="modal-user-name">Customer</strong>, your request for <strong id="modal-user-kits">1</strong>
+          Puja Kit(s) has been successfully reserved!
+        </p>
+        <button type="button" id="modal-ok-btn" class="btn btn-primary btn-block btn-lg" style="font-weight: 700;">
+          OK
+        </button>
+      </div>
+    </div>
 
-          <div class="section-title">
-            <h2>Top 5 Nearest Pickup Stores</h2>
-            <p>Please visit any of these verified locations to collect your kit & pay cash/UPI on delivery.</p>
-          </div>
+
+
+
+    <!-- VIEW 2: Find Nearest Stores Tool -->
+    <div id="view-nearest-container" class="view-section hidden">
+      <section class="card">
+        <div class="card-header">
+          <h2>📍 Find Nearest Stores</h2>
+          <p>Detect or enter your location to locate the closest pickup centers.</p>
         </div>
 
-        <!-- Store Cards Container -->
-        <div id="stores-list" class="stores-grid">
-          <!-- Rendered dynamically by JavaScript -->
-        </div>
+        <div class="form-group location-group">
+          <!-- GPS Button & Input for Nearest Lookup -->
+          <div class="location-actions">
+            <button type="button" id="nearest-geo-btn" class="btn btn-secondary">
+              <span class="btn-main-label"><span class="btn-icon">📍</span> Use My Current Location</span>
+              <span class="btn-sub-label">-- Recommended</span>
+            </button>
+          </div>
+          <p class="text-center font-weight-bold" style="margin: 12px 0;">(OR enter your location manually below)</p>
+          <div class="input-wrapper autocomplete-wrapper">
+            <input type="text" id="nearest-search-address" placeholder="Type area, street name, city..."
+              autocomplete="off">
+            <div id="nearest-address-suggestions" class="suggestions-list hidden"></div>
+          </div>
 
-        <div class="results-actions">
-          <button type="button" id="new-order-btn" class="btn btn-outline btn-block">
-            🔄 Place Another Request
+          <button type="button" id="nearest-search-btn" class="btn btn-primary btn-block btn-lg"
+            style="margin-top: 16px;">
+            Find Nearest Pickup Centers
           </button>
+        </div>
+
+        <!-- Direct Nearest Stores Output Grid -->
+        <div id="nearest-lookup-results" class="stores-grid hidden" style="margin-top: 24px;">
+          <h3 class="text-center" style="margin-bottom: 16px;">Closest Stores Near You:</h3>
+          <div id="nearest-stores-grid" class="stores-grid compact-grid"></div>
         </div>
       </section>
     </div>
+
 
     <!-- VIEW 2: Browse All Stores (Compact View Only + Zone Filters) -->
     <div id="view-browse-container" class="view-section hidden">
       <section class="card browse-card">
         <div class="card-header">
-          <h2>🏪 All Store Locations</h2>
+          <h2>All Store Locations</h2>
           <p id="browse-subtitle">Select or search to view pickup locations.</p>
         </div>
 
@@ -204,17 +214,23 @@
             <button type="button" class="chip" data-region="MAHARASHTRA">Maharashtra (2)</button>
           </div>
 
-         <hr>
+          <hr>
 
           <!-- Hyderabad & Telangana Zone Sub-Chips (Hidden by default, shown only when Telangana/Hyd is selected) -->
           <div class="zone-filter-chips hidden" id="zone-chips">
             <button type="button" class="sub-chip active" data-zone="ALL">All Telangana Locations</button>
-            <button type="button" class="sub-chip" data-zone="WEST_HYD">📍 West Hyd (Kukatpally, Miyapur, Bachupally)</button>
-            <button type="button" class="sub-chip" data-zone="IT_CORRIDOR">📍 IT Corridor (Gachibowli, Kondapur, Madhapur)</button>
-            <button type="button" class="sub-chip" data-zone="CENTRAL_HYD">📍 Central (Banjara Hills, Panjagutta, SR Nagar)</button>
-            <button type="button" class="sub-chip" data-zone="EAST_HYD">📍 East Hyd (LB Nagar, Uppal, Dilsukhnagar)</button>
-            <button type="button" class="sub-chip" data-zone="NORTH_HYD">📍 North Hyd (Alwal, Kompally, Malkajgiri)</button>
-            <button type="button" class="sub-chip" data-zone="OTHER_TS_CITIES">🌆 Other Telangana Cities (Warangal, Nalgonda, Siddipet, etc.)</button>
+            <button type="button" class="sub-chip" data-zone="WEST_HYD">📍 West Hyd (Kukatpally, Miyapur,
+              Bachupally)</button>
+            <button type="button" class="sub-chip" data-zone="IT_CORRIDOR">📍 IT Corridor (Gachibowli, Kondapur,
+              Madhapur)</button>
+            <button type="button" class="sub-chip" data-zone="CENTRAL_HYD">📍 Central (Banjara Hills, Panjagutta, SR
+              Nagar)</button>
+            <button type="button" class="sub-chip" data-zone="EAST_HYD">📍 East Hyd (LB Nagar, Uppal,
+              Dilsukhnagar)</button>
+            <button type="button" class="sub-chip" data-zone="NORTH_HYD">📍 North Hyd (Alwal, Kompally,
+              Malkajgiri)</button>
+            <button type="button" class="sub-chip" data-zone="OTHER_TS_CITIES">Other Telangana Cities (Warangal,
+              Nalgonda, etc.)</button>
           </div>
 
 
@@ -253,31 +269,38 @@
         <div id="admin-auth" class="admin-auth-box">
           <p>Enter Admin Passcode to view orders & export to Excel:</p>
           <div class="auth-input-group">
-            <input type="password" id="admin-passcode" placeholder="Enter passcode">
+            <div class="passcode-wrapper" style="position: relative; flex: 1; display: flex; align-items: center;">
+              <input type="password" id="admin-passcode" placeholder="Enter passcode"
+                style="width: 100%; padding-right: 40px;">
+              <button type="button" id="toggle-passcode-btn" aria-label="Toggle password visibility"
+                style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; color: var(--text-muted);"
+                title="Show/Hide Passcode"><span class="material-symbols-outlined" style="font-size: 20px;">visibility</span></button>
+            </div>
             <button id="admin-login-btn" class="btn btn-primary">Login</button>
           </div>
           <span id="auth-error" class="error-msg">Incorrect passcode</span>
         </div>
 
+
         <!-- Admin Content (shown after auth) -->
         <div id="admin-panel" class="admin-panel hidden">
-          <div class="admin-toolbar">
-            <div class="stats-badge">Total Orders: <strong id="total-orders-count">0</strong></div>
-            <button id="export-excel-btn" class="btn btn-success">
-              📥 Export to Excel (.CSV)
-            </button>
+          <!-- Row 1: Stats Badges -->
+          <div class="admin-toolbar" style="margin-bottom: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <div class="stats-badge" style="flex: 1; min-width: 130px; text-align: center;">Total Orders: <strong id="total-orders-count">0</strong></div>
+            <div class="stats-badge" style="flex: 1; min-width: 130px; text-align: center; background: #FFF3E0; border-color: #FFE0B2; color: #E65100;">Total Kits: <strong id="total-kits-count">0</strong></div>
           </div>
 
-          <!-- Webhook Config Box -->
-          <div class="webhook-config-box">
-            <label for="google-sheet-url"><strong>Google Sheets Webhook URL:</strong></label>
-            <div class="input-wrapper">
-              <input type="url" id="google-sheet-url" placeholder="https://script.google.com/macros/s/.../exec">
-              <button id="save-webhook-btn" class="btn btn-secondary btn-sm">Save URL</button>
-            </div>
-            <small class="help-text">Optional. See <code>google_script_template.js</code> to link your live Google
-              Sheet.</small>
+          <!-- Row 2: Side-by-side Equal-width Action Buttons -->
+          <div class="admin-action-row" style="display: flex; gap: 10px; margin-bottom: 16px; width: 100%;">
+            <button id="export-excel-btn" class="btn btn-success" style="flex: 1; justify-content: center; font-weight: 700; text-align: center; padding: 10px 12px; font-size: 0.88rem;">
+              📥 Export to Excel (.CSV)
+            </button>
+            <a href="https://docs.google.com/spreadsheets/d/1H8HQCLgjRqZPkPAkoRgx9xkY714iLFPv08mea-3z2_g/edit?usp=sharing" target="_blank" rel="noopener" class="btn btn-primary" style="flex: 1; justify-content: center; background: #2E7D32; border-color: #2E7D32; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; text-align: center; padding: 10px 12px; font-size: 0.88rem;">
+              📊 Open Live Google Sheet ↗
+            </a>
           </div>
+
+
 
           <div class="table-responsive">
             <table class="orders-table">
@@ -288,26 +311,24 @@
                   <th>Mobile</th>
                   <th>Kits</th>
                   <th>Address</th>
-                  <th>Nearest Assigned Store</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody id="orders-table-body">
                 <tr>
-                  <td colspan="7" class="empty-table">No orders logged yet.</td>
+                  <td colspan="6" class="empty-table">No orders logged yet.</td>
                 </tr>
+
               </tbody>
             </table>
           </div>
 
-          <div class="admin-footer-actions">
-            <button id="clear-orders-btn" class="btn btn-danger btn-sm">Clear All Local Orders</button>
-          </div>
         </div>
 
       </div>
     </div>
   </div>
+
 
   <!-- Site Footer -->
   <footer class="site-footer">
@@ -323,7 +344,8 @@
         An Initiative by <strong>Badyatha Foundation</strong>
       </p>
       <p class="footer-subtext">
-        Promoting Eco-Friendly Clay Ganesh Idols & Authentic Organic Puja Kits across Telangana, Andhra Pradesh, Karnataka & Maharashtra.
+        Promoting Eco-Friendly Clay Ganesh Idols & Authentic Organic Puja Kits across Telangana, Andhra Pradesh,
+        Karnataka & Maharashtra.
       </p>
       <p class="footer-copyright">
         © 2026 Badyatha Foundation. All rights reserved.

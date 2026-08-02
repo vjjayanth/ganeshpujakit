@@ -4,7 +4,10 @@ An initiative by **Badyatha Foundation** promoting eco-friendly clay Ganesh idol
 
 A lightweight, high-performance, mobile-first web application designed for reserving complete Ganesh Puja Kits online in 30 seconds with direct store pickup at 88 verified pickup centers.
 
+> 📖 **Complete Setup, API Credentials & Google Sheets Guide**: See [SETUP_GUIDE.md](file:///Users/jayanth/Desktop/puja-kit-pickup-app/SETUP_GUIDE.md) for full operational credentials, LocationIQ API keys, Google Apps Script code, and Vercel deployment steps.
+
 ---
+
 
 ## 🛠️ Technology Stack & APIs
 
