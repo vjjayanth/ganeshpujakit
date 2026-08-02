@@ -471,9 +471,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show Popup Modal after short delay
     setTimeout(() => {
       // Reset Button State
-      if (btnText) btnText.textContent = "🪔 Confirm & Reserve Puja Kits";
+      if (btnText) btnText.textContent = "Confirm & Reserve Puja Kits";
       if (btnSpinner) btnSpinner.classList.add('hidden');
       submitBtn.disabled = false;
+
 
       // Populate Modal & Display
       if (modalOrderId) modalOrderId.textContent = orderId;
